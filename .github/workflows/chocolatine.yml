@@ -1,3 +1,10 @@
+##
+## EPITECH PROJECT, 2024
+## chocolatine_test
+## File description:
+## chocolatine.yml
+##
+
 name: Chocolatine Workflow
 
 on:
@@ -23,14 +30,10 @@ jobs:
         id: coding_style
         shell: bash
         run: |
-          echo "Running coding style check..."
           check.sh $(pwd) $(pwd) || true
-          
           if [ -f coding-style-reports.log ]; then
             echo "Found coding style violations:"
             cat coding-style-reports.log
-            
-            # Create GitHub annotations for each error
             while IFS= read -r line; do
               if [[ $line =~ ^([^:]+):([0-9]+): ]]; then
                 file="${BASH_REMATCH[1]}"
@@ -38,9 +41,7 @@ jobs:
                 echo "::error file=$file,line=$line_num::$line"
               fi
             done < coding-style-reports.log
-            
-            echo "❌ Coding style violations found"
-            exit 1
+            exit 1  # Fails if violations exist
           else
             echo "✅ No coding style violations found"
           fi
@@ -51,18 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Build project
-        run: |
-          make
-          echo "Build successful"
-
-      - name: Clean build
-        run: |
-          make clean
-          echo "Clean completed"
+      - uses: actions/checkout@v4
+      - run: make
+      - run: make clean
 
   test:
     name: Run Tests
@@ -70,13 +62,8 @@ jobs:
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Execute tests
-        run: |
-          make tests_run
-          echo "Tests completed"
+      - uses: actions/checkout@v4
+      - run: make tests_run
 
   push_to_mirror:
     name: Push to Mirror
