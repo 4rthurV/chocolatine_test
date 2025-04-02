@@ -1,10 +1,3 @@
-##
-## EPITECH PROJECT, 2024
-## chocolatine_test
-## File description:
-## chocolatine.yml
-##
-
 name: Chocolatine Workflow
 
 on:
@@ -21,7 +14,7 @@ env:
 
 jobs:
   check_coding_style:
-    if: github.repository != env.MIRROR_URL
+    if: github.repository != vars.MIRROR_URL
     name: Check Coding Style
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
@@ -47,7 +40,7 @@ jobs:
           fi
 
   check_program_compilation:
-    if: github.repository != env.MIRROR_URL && needs.check_coding_style.result == 'success'
+    if: github.repository != vars.MIRROR_URL && needs.check_coding_style.result == 'success'
     name: Check Program Compilation
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
@@ -62,7 +55,7 @@ jobs:
       
       - name: Check executables
         run: |
-          IFS=',' read -ra EXEC_ARRAY <<< "$EXECUTABLES"
+          IFS=',' read -ra EXEC_ARRAY <<< "${{ env.EXECUTABLES }}"
           for exec in "${EXEC_ARRAY[@]}"; do
             if [ ! -f "$exec" ]; then
               echo "::error file=$exec::Executable '$exec' not found"
@@ -77,7 +70,7 @@ jobs:
         run: make clean
 
   run_tests:
-    if: github.repository != env.MIRROR_URL && needs.check_program_compilation.result == 'success'
+    if: github.repository != vars.MIRROR_URL && needs.check_program_compilation.result == 'success'
     name: Run Tests
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
@@ -91,7 +84,7 @@ jobs:
         run: make tests_run
 
   push_to_mirror:
-    if: github.repository != env.MIRROR_URL && github.event_name == 'push' && needs.run_tests.result == 'success'
+    if: github.repository != vars.MIRROR_URL && github.event_name == 'push' && needs.run_tests.result == 'success'
     name: Push to Mirror Repository
     runs-on: ubuntu-latest
     needs: run_tests
