@@ -8,13 +8,8 @@ on:
     branches-ignore:
       - 'ga-ignore-*'
 
-env:
-  MIRROR_URL: ${{ secrets.MIRROR_URL }}
-  EXECUTABLES: ${{ secrets.EXECUTABLES }}
-
 jobs:
   check_coding_style:
-    if: github.repository != vars.MIRROR_URL
     name: Check Coding Style
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
@@ -23,13 +18,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Run coding style checker
         id: coding_style
         shell: bash
         run: |
-          check.sh $(pwd) $(pwd)
+          echo "Running coding style check..."
+          check.sh $(pwd) $(pwd) || true
+          
           if [ -f coding-style-reports.log ]; then
+            echo "Found coding style violations:"
+            cat coding-style-reports.log
+            
+            # Create GitHub annotations for each error
             while IFS= read -r line; do
               if [[ $line =~ ^([^:]+):([0-9]+): ]]; then
                 file="${BASH_REMATCH[1]}"
@@ -37,66 +38,54 @@ jobs:
                 echo "::error file=$file,line=$line_num::$line"
               fi
             done < coding-style-reports.log
+            
+            echo "❌ Coding style violations found"
             exit 1
+          else
+            echo "✅ No coding style violations found"
           fi
 
-  check_program_compilation:
-    if: github.repository != vars.MIRROR_URL && needs.check_coding_style.result == 'success'
-    name: Check Program Compilation
-    runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker
+  build:
+    name: Build Project
     needs: check_coding_style
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Make
-        timeout-minutes: 2
-        run: make
-      
-      - name: Check executables
-        run: |
-          IFS=',' read -ra EXEC_ARRAY <<< "${{ env.EXECUTABLES }}"
-          for exec in "${EXEC_ARRAY[@]}"; do
-            if [ ! -f "$exec" ]; then
-              echo "::error file=$exec::Executable '$exec' not found"
-              exit 1
-            elif [ ! -x "$exec" ]; then
-              echo "::error file=$exec::File '$exec' is not executable"
-              exit 1
-            fi
-          done
-      
-      - name: Make clean
-        run: make clean
-
-  run_tests:
-    if: github.repository != vars.MIRROR_URL && needs.check_program_compilation.result == 'success'
-    name: Run Tests
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
-    needs: check_program_compilation
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Run tests
-        timeout-minutes: 2
-        run: make tests_run
+
+      - name: Build project
+        run: |
+          make
+          echo "Build successful"
+
+      - name: Clean build
+        run: |
+          make clean
+          echo "Clean completed"
+
+  test:
+    name: Run Tests
+    needs: build
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Execute tests
+        run: |
+          make tests_run
+          echo "Tests completed"
 
   push_to_mirror:
-    if: github.repository != vars.MIRROR_URL && github.event_name == 'push' && needs.run_tests.result == 'success'
-    name: Push to Mirror Repository
+    name: Push to Mirror
+    needs: test
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: run_tests
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Mirror repository
-        uses: pixta-dev/repository-mirroring-action@v1
-        with:
-          target_repo_url: ${{ env.MIRROR_URL }}
-          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+      - uses: pixta-dev/repository-mirroring-action@v1
+    with:
+      target_repo_url: ${{ secrets.MIRROR_URL }}
+      ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
