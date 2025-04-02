@@ -26,6 +26,7 @@ jobs:
       
       - name: Run coding style checker
         id: coding_style
+        shell: bash
         run: |
           check.sh $(pwd) $(pwd)
           if [ -f coding-style-reports.log ]; then
