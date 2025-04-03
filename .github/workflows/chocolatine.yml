@@ -109,13 +109,21 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          # Install the ED25519 key
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          # Configure SSH to use ED25519
-          echo -e "Host github.com\n  Hostname github.com\n  IdentityFile ~/.ssh/id_ed25519\n  IdentitiesOnly yes" > ~/.ssh/config
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
-          # Test connection
+
+          cat > ~/.ssh/config <<EOF
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+          EOF
+
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          # Verify setup
+          ls -la ~/.ssh/
           ssh -T git@github.com || true
 
       - name: Mirror repository
