@@ -109,11 +109,15 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          # Properly format the ED25519 key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Add GitHub to known hosts
           ssh-keyscan github.com >> ~/.ssh/known_hosts
+          # Test connection
+          ssh -T git@github.com || true
 
-      - name: Mirror
+      - name: Mirror repository
         uses: pixta-dev/repository-mirroring-action@v1
         with:
           target_repo_url: ${{ env.MIRROR_URL }}
