@@ -1,5 +1,5 @@
 ##
-## EPITECH PROJECT, 2024
+## EPITECH PROJECT, 2025
 ## chocolatine_test
 ## File description:
 ## chocolatine.yml
@@ -17,7 +17,7 @@ on:
 
 env:
   MIRROR_URL: "git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes"
-  EXECUTABLES: "example"
+  EXECUTABLES: "my_program"
 #  LIBRARIES: "lib/libmy.a"
 
 jobs:
