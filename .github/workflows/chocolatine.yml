@@ -16,14 +16,14 @@ on:
       - "ga-ignore-*"
 
 env:
-  MIRROR_URL: "git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-jawed.lahrouri.git"
+  MIRROR_URL: "git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes"
   EXECUTABLES: "example"
 #  LIBRARIES: "lib/libmy.a"
 
 jobs:
   check_coding_style:
     name: coding style checker
-    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-jawed.lahrouri'
+    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
     outputs:
@@ -52,7 +52,7 @@ jobs:
 
   check_compilation:
     name: Checking compilation
-    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-jawed.lahrouri'
+    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker:latest
     outputs:
