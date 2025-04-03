@@ -21,6 +21,24 @@ env:
 #  LIBRARIES: "lib/libmy.a"
 
 jobs:
+  check_branch:
+    name: Check branch validity
+    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
+    runs-on: ubuntu-latest
+    outputs:
+      branch_valid: ${{ !startsWith(github.ref, 'refs/heads/ga-ignore-') }}
+    steps:
+      - name: Verify branch
+        id: branch_check
+        run: |
+          if [[ "${{ github.ref }}" == refs/heads/ga-ignore-* ]]; then
+            echo "Branch is ignored (ga-ignore-*)"
+            echo "branch_valid=false" >> $GITHUB_OUTPUT
+          else
+            echo "Branch is valid"
+            echo "branch_valid=true" >> $GITHUB_OUTPUT
+          fi
+
   check_coding_style:
     name: coding style checker
     if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
