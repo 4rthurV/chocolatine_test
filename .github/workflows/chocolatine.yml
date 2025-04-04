@@ -18,12 +18,30 @@ on:
 env:
   MIRROR_URL: "git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes"
   EXECUTABLES: "my_program"
-#  LIBRARIES: "lib/libmy.a"
 
 jobs:
+  check_repo:
+    name: Check branch validity
+    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
+    runs-on: ubuntu-latest
+    outputs:
+      branch_valid: ${{ !startsWith(github.ref, 'refs/heads/ga-ignore-') }}
+    steps:
+      - name: Verify branch
+        id: branch_check
+        run: |
+          if [[ "${{ github.ref }}" == refs/heads/ga-ignore-* ]]; then
+            echo "Branch is ignored (ga-ignore-*)"
+            echo "branch_valid=false" >> $GITHUB_OUTPUT
+          else
+            echo "Branch is valid"
+            echo "branch_valid=true" >> $GITHUB_OUTPUT
+          fi
+
   check_coding_style:
     name: coding style checker
     if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
+    needs: check_repo
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
     outputs:
@@ -32,27 +50,32 @@ jobs:
       - name: Check repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 1
 
       - name: run coding style
-        run: check.sh $(pwd) $(pwd)
+        run: check.sh $(pwd) $(pwd) || true
 
       - name: check style error
         id: set_output
         run: |
-          if [ -s $(pwd)/coding-style-reports.log ]; then
+          if [ -f coding-style-reports.log ] && [ -s coding-style-reports.log ]; then
             echo "run_jobs=false" >> $GITHUB_OUTPUT
-            while IFS=':' read -r FILE LINE GRAVITY ERROR; do
-              echo "::error file=$FILE,line=$LINE,title=$GRAVITY::$ERROR"
-            done < $(pwd)/coding-style-reports.log
+            while IFS= read -r line; do
+              if [[ $line =~ ^([^:]+):([0-9]+): ]]; then
+                file="${BASH_REMATCH[1]}"
+                line_num="${BASH_REMATCH[2]}"
+                echo "::error file=$file,line=$line_num::$line"
+              fi
+            done < coding-style-reports.log
+            exit 1
           else
             echo "run_jobs=true" >> $GITHUB_OUTPUT
           fi
 
-  check_compilation:
+  check_program_compilation:
     name: Checking compilation
-    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
+    needs: [check_coding_style]
+    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes' && needs.check_coding_style.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker:latest
     outputs:
@@ -75,22 +98,39 @@ jobs:
           else
             echo "run_jobs=false" >> $GITHUB_OUTPUT
             echo "::error:: compilation failed"
+            exit 1
           fi
+
+      - name: Clean build
+        run: make clean
+
+  run_tests:
+    name: Run Tests
+    needs: [check_program_compilation]
+    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run tests
+        timeout-minutes: 2
+        run: make tests_run
 
   push_to_mirror:
     name: mirror repository
-    needs: [check_compilation, check_coding_style]
-    if: needs.check_compilation.outputs.run_rest_jobs == 'true' && needs.check_coding_style.outputs.run_rest_jobs == 'true'
+    needs: [check_program_compilation]
+    if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes' && github.event_name == 'push' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Mirror
+      - name: Push to mirror repository
         uses: pixta-dev/repository-mirroring-action@v1
         with:
           target_repo_url: ${{ env.MIRROR_URL }}
-          ssh_private_key: ${{secrets.SSH_PRIVATE_KEY}}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
