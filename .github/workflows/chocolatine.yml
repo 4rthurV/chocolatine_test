@@ -23,7 +23,6 @@ env:
 jobs:
   push_to_mirror:
     name: Mirror Repository
-    if: github.event_name == 'push' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
