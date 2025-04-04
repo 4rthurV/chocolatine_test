@@ -1,5 +1,5 @@
 ##
-## EPITECH PROJECT, 2025
+## EPITECH PROJECT, 2024
 ## chocolatine_test
 ## File description:
 ## chocolatine.yml
@@ -23,26 +23,23 @@ env:
 jobs:
   check_repo:
     name: Check branch validity
-    if: github.repository != ${{ env.MAIN_REPO }}
     runs-on: ubuntu-latest
     outputs:
-      branch_valid: ${{ !startsWith(github.ref, 'refs/heads/ga-ignore-') }}
+      branch_valid: ${{ steps.set_output.outputs.branch_valid }}
     steps:
-      - name: Verify branch
-        id: branch_check
+      - name: Verify repository
+        id: set_output
         run: |
-          if [[ "${{ github.ref }}" == refs/heads/ga-ignore-* ]]; then
-            echo "Branch is ignored (ga-ignore-*)"
+          if [ "${{ github.repository }}" == "${{ env.MAIN_REPO }}" ]; then
             echo "branch_valid=false" >> $GITHUB_OUTPUT
           else
-            echo "Branch is valid"
             echo "branch_valid=true" >> $GITHUB_OUTPUT
           fi
 
   check_coding_style:
-    name: coding style checker
+    name: Coding Style Checker
     needs: [check_repo]
-    if: github.repository != ${{ env.MAIN_REPO }}
+    if: needs.check_repo.outputs.branch_valid == 'true'
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
     outputs:
@@ -53,11 +50,11 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: run coding style
+      - name: Run coding style
         shell: bash
         run: check.sh $(pwd) $(pwd) || true
 
-      - name: check style error
+      - name: Check style error
         id: set_output
         shell: bash
         run: |
@@ -71,9 +68,9 @@ jobs:
           fi
 
   check_program_compilation:
-    name: Checking compilation
+    name: Checking Compilation
     needs: [check_coding_style]
-    if: github.repository != ${{ env.MAIN_REPO }} && needs.check_coding_style.outputs.run_rest_jobs == 'true'
+    if: needs.check_coding_style.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker:latest
     outputs:
@@ -83,19 +80,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      
-      - name: run make
+
+      - name: Run make
         timeout-minutes: 2
         run: make
 
-      - name: check files existence
+      - name: Check files existence
         id: set_output
         run: |
           if [ -f "${{ env.EXECUTABLES }}" ]; then
             echo "run_jobs=true" >> $GITHUB_OUTPUT
           else
             echo "run_jobs=false" >> $GITHUB_OUTPUT
-            echo "::error:: compilation failed"
+            echo "::error:: Compilation failed"
             exit 1
           fi
 
@@ -105,21 +102,21 @@ jobs:
   run_tests:
     name: Run Tests
     needs: [check_program_compilation]
-    if: github.repository != ${{ env.MAIN_REPO }} && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
+    if: needs.check_program_compilation.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Run tests
         timeout-minutes: 2
         run: make tests_run
 
   push_to_mirror:
-    name: mirror repository
+    name: Mirror Repository
     needs: [run_tests]
-    if: github.repository != ${{ env.MAIN_REPO }} && github.event_name == 'push' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
+    if: github.event_name == 'push' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
