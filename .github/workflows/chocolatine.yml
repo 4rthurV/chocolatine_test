@@ -40,6 +40,7 @@ jobs:
 
   check_coding_style:
     name: coding style checker
+    needs: [check_repo]
     if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
