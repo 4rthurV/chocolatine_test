@@ -21,14 +21,109 @@ env:
   EXECUTABLES: "my_program"
 
 jobs:
+  check_repo:
+    name: Check branch validity
+    runs-on: ubuntu-latest
+    outputs:
+      branch_valid: ${{ steps.set_output.outputs.branch_valid }}
+    steps:
+      - name: Verify repository
+        id: set_output
+        run: |
+          if [ "${{ github.repository }}" == "${{ env.MAIN_REPO }}" ]; then
+            echo "branch_valid=false" >> $GITHUB_OUTPUT
+          else
+            echo "branch_valid=true" >> $GITHUB_OUTPUT
+          fi
+
+  check_coding_style:
+    name: Coding Style Checker
+    needs: [check_repo]
+    if: needs.check_repo.outputs.branch_valid == 'true'
+    runs-on: ubuntu-latest
+    container: ghcr.io/epitech/coding-style-checker:latest
+    outputs:
+      run_rest_jobs: ${{ steps.set_output.outputs.run_jobs }}
+    steps:
+      - name: Check repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run coding style
+        shell: bash
+        run: check.sh $(pwd) $(pwd) || true
+
+      - name: Check style error
+        id: set_output
+        shell: bash
+        run: |
+          if [ -s $(pwd)/coding-style-reports.log ]; then
+            echo "run_jobs=false" >> $GITHUB_OUTPUT
+            while IFS=':' read -r FILE LINE GRAVITY ERROR; do
+              echo "::error file=$FILE,line=$LINE,title=$GRAVITY::$ERROR"
+            done < $(pwd)/coding-style-reports.log
+          else
+            echo "run_jobs=true" >> $GITHUB_OUTPUT
+          fi
+
+  check_program_compilation:
+    name: Checking Compilation
+    needs: [check_coding_style]
+    if: needs.check_coding_style.outputs.run_rest_jobs == 'true'
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker:latest
+    outputs:
+      run_rest_jobs: ${{ steps.set_output.outputs.run_jobs }}
+    steps:
+      - name: Check repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run make
+        timeout-minutes: 2
+        run: make
+
+      - name: Check files existence
+        id: set_output
+        run: |
+          if [ -f "${{ env.EXECUTABLES }}" ]; then
+            echo "run_jobs=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_jobs=false" >> $GITHUB_OUTPUT
+            echo "::error:: Compilation failed"
+            exit 1
+          fi
+
+      - name: Clean build
+        run: make clean
+
+  run_tests:
+    name: Run Tests
+    needs: [check_program_compilation]
+    if: needs.check_program_compilation.outputs.run_rest_jobs == 'true'
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        timeout-minutes: 2
+        run: make tests_run
+
   push_to_mirror:
     name: Mirror Repository
+    needs: [run_tests]
+    if: github.event_name == 'push' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Push to mirror repository
         uses: pixta-dev/repository-mirroring-action@v1
         with:
