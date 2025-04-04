@@ -7,8 +7,8 @@
 
 #include "my.h"
 
-int main(void)
+int main()
 {
-    my_putstr("Hello, Chocolatine!\n");
-    return (0);
+    //my_putstr("Hello, Chocolatine!\n");
+    return 0;
 }
