@@ -59,8 +59,7 @@ jobs:
       - name: check style error
         id: set_output
         shell: bash
-       
-      - run: |
+        run: |
           if [ -s $(pwd)/coding-style-reports.log ]; then
             echo "run_jobs=false" >> $GITHUB_OUTPUT
             while IFS=':' read -r FILE LINE GRAVITY ERROR; do
