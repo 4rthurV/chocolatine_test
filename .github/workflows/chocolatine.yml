@@ -16,13 +16,13 @@ on:
       - "ga-ignore-*"
 
 env:
-  MIRROR_URL: "git@github.com:4rthurV/chocolatine_mirror.git"
+  MIRROR_URL: "git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes.git"
   EXECUTABLES: "my_program"
 
 jobs:
   check_repo:
     name: Check branch validity
-    if: github.repository != 'git@github.com:4rthurV/chocolatine_mirror.git'
+    if: github.repository != 'git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes.git'
     runs-on: ubuntu-latest
     outputs:
       branch_valid: ${{ !startsWith(github.ref, 'refs/heads/ga-ignore-') }}
@@ -41,7 +41,7 @@ jobs:
   check_coding_style:
     name: coding style checker
     needs: [check_repo]
-    if: github.repository != 'git@github.com:4rthurV/chocolatine_mirror.git'
+    if: github.repository != 'git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes.git'
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
     outputs:
@@ -72,7 +72,7 @@ jobs:
   check_program_compilation:
     name: Checking compilation
     needs: [check_coding_style]
-    if: github.repository != 'git@github.com:4rthurV/chocolatine_mirror.git' && needs.check_coding_style.outputs.run_rest_jobs == 'true'
+    if: github.repository != 'git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes.git' && needs.check_coding_style.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker:latest
     outputs:
@@ -104,7 +104,7 @@ jobs:
   run_tests:
     name: Run Tests
     needs: [check_program_compilation]
-    if: github.repository != 'git@github.com:4rthurV/chocolatine_mirror.git' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
+    if: github.repository != 'git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes.git' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
     steps:
@@ -118,7 +118,7 @@ jobs:
   push_to_mirror:
     name: mirror repository
     needs: [run_tests]
-    if: github.repository != 'git@github.com:4rthurV/chocolatine_mirror.git' && github.event_name == 'push' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
+    if: github.repository != 'git@github.com:EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes.git' && github.event_name == 'push' && needs.check_program_compilation.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
