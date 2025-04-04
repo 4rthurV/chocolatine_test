@@ -63,10 +63,18 @@ jobs:
           if [ -f coding-style-reports.log ] && [ -s coding-style-reports.log ]; then
             echo "run_jobs=false" >> $GITHUB_OUTPUT
             while IFS= read -r line; do
-              if [[ $line =~ ^([^:]+):([0-9]+): ]]; then
+              if [[ $line =~ ^([^:]+):([0-9]+):\ ([A-Z]+):([A-Za-z0-9-]+) ]]; then
                 file="${BASH_REMATCH[1]}"
                 line_num="${BASH_REMATCH[2]}"
-                echo "::error file=$file,line=$line_num::$line"
+                severity="${BASH_REMATCH[3]}"
+                code="${BASH_REMATCH[4]}"
+                case $severity in
+                  MAJOR) emoji="❌" ;;
+                  MINOR) emoji="⚠️" ;;
+                  INFO) emoji="ℹ️" ;;
+                  *) emoji="❓" ;;
+                esac
+                echo "::error file=$file,line=$line_num::$emoji $severity coding style error: $file#L$line_num ($code)"
               fi
             done < coding-style-reports.log
             exit 1
