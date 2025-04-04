@@ -14,6 +14,8 @@ OBJ     =   $(SRC:.c=.o)
 
 CFLAGS  =   -I./include -Wall -Wextra
 
+TEST_FLAGS	=	-lcriterion --coverage
+
 all:    $(NAME)
 
 $(NAME):    $(OBJ)
@@ -28,5 +30,5 @@ fclean: clean
 re: fclean all
 
 tests_run:
-	@gcc -o unit_tests $(SRC) tests/test_my_putstr.c $(CFLAGS) -lcriterion --coverage
+	@gcc -o unit_tests $(SRC) tests/test_my_putstr.c $(CFLAGS) $(TEST_FLAGS)
 	@./unit_tests
