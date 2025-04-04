@@ -41,7 +41,6 @@ jobs:
   check_coding_style:
     name: coding style checker
     if: github.repository != 'EpitechPGEPromo2029/B-DOP-200-LIL-2-1-chocolatine-arthur.vignes'
-    needs: check_repo
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
     outputs:
@@ -53,10 +52,12 @@ jobs:
           fetch-depth: 1
 
       - name: run coding style
+        shell: bash
         run: check.sh $(pwd) $(pwd) || true
 
       - name: check style error
         id: set_output
+        shell: bash
         run: |
           if [ -f coding-style-reports.log ] && [ -s coding-style-reports.log ]; then
             echo "run_jobs=false" >> $GITHUB_OUTPUT
