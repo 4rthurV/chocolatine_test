@@ -17,7 +17,7 @@ CFLAGS  =   -I./include -Wall -Wextra
 all:    $(NAME)
 
 $(NAME):    $(OBJ)
-	@gcc -o $(NAME) $(OBJ)
+	@gcc -o $(NAME) $(OBJ) $(CFLAGS)
 
 clean:
 	@rm -f $(OBJ)
@@ -28,5 +28,5 @@ fclean: clean
 re: fclean all
 
 tests_run:
-	@gcc -o unit_tests $(SRC) tests/test_my_putstr.c -lcriterion --coverage
+	@gcc -o unit_tests $(SRC) tests/test_my_putstr.c $(CFLAGS) -lcriterion --coverage
 	@./unit_tests
