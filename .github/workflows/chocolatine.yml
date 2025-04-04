@@ -59,25 +59,13 @@ jobs:
       - name: check style error
         id: set_output
         shell: bash
-        run: |
-          if [ -f coding-style-reports.log ] && [ -s coding-style-reports.log ]; then
+       
+      - run: |
+          if [ -s $(pwd)/coding-style-reports.log ]; then
             echo "run_jobs=false" >> $GITHUB_OUTPUT
-            while IFS= read -r line; do
-              if [[ $line =~ ^([^:]+):([0-9]+):\ ([A-Z]+):([A-Za-z0-9-]+) ]]; then
-                file="${BASH_REMATCH[1]}"
-                line_num="${BASH_REMATCH[2]}"
-                severity="${BASH_REMATCH[3]}"
-                code="${BASH_REMATCH[4]}"
-                case $severity in
-                  MAJOR) emoji="❌" ;;
-                  MINOR) emoji="⚠️" ;;
-                  INFO) emoji="ℹ️" ;;
-                  *) emoji="❓" ;;
-                esac
-                echo "::error file=$file,line=$line_num::$emoji $severity coding style error: $file#L$line_num ($code)"
-              fi
-            done < coding-style-reports.log
-            exit 1
+            while IFS=':' read -r FILE LINE GRAVITY ERROR; do
+              echo "::error file=$FILE,line=$LINE,title=$GRAVITY::$ERROR"
+            done < $(pwd)/coding-style-reports.log
           else
             echo "run_jobs=true" >> $GITHUB_OUTPUT
           fi
