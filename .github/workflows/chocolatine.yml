@@ -22,7 +22,7 @@ env:
 
 jobs:
   push_to_mirror:
-    name: Mirror Repositor
+    name: Mirror Repository
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
