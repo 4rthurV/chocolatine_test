@@ -17,7 +17,7 @@ on:
 
 env:
   MIRROR_URL: "git@github.com:4rthurV/chocolatine_mirror.git"
-  EXECUTABLES: "my_program"
+  EXECUTABLES: ${{ steps.get_exe_name.outputs.exe_name }}
 
 jobs:
   check_repo:
@@ -38,9 +38,23 @@ jobs:
             echo "branch_valid=true" >> $GITHUB_OUTPUT
           fi
 
+  setup:
+    name: Setup variables
+    runs-on: ubuntu-latest
+    outputs:
+      exe_name: ${{ steps.get_exe_name.outputs.exe_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get executable name from Makefile
+        id: get_exe_name
+        run: |
+          EXE_NAME=$(grep -E '^NAME\s*=' Makefile | cut -d '=' -f 2 | tr -d '[:space:]')
+          echo "exe_name=$EXE_NAME" >> $GITHUB_OUTPUT
+          echo "Executable name: $EXE_NAME"
+
   check_coding_style:
     name: coding style checker
-    needs: [check_repo]
+    needs: [check_repo, setup]
     if: github.repository != 'git@github.com:4rthurV/chocolatine_mirror.git'
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
@@ -76,7 +90,7 @@ jobs:
 
   check_program_compilation:
     name: Checking compilation
-    needs: [check_coding_style]
+    needs: [check_coding_style, setup]
     if: github.repository != 'git@github.com:4rthurV/chocolatine_mirror.git' && needs.check_coding_style.outputs.run_rest_jobs == 'true'
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker:latest
