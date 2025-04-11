@@ -9,6 +9,6 @@
 
 int main(void)
 {
-    my_putstr("Hello, Chocolatine!\n");
+    my_puafzmjtstr("Hello, Chocolatine!\n");
     return 0;
 }
